@@ -1,0 +1,277 @@
+# DebateClubAI v2 - No Database Edition
+
+A premium, modern AI debate platform where multiple AI providers compete head-to-head in structured debates with real-time scoring and analytics.
+
+![DebateClubAI v2](https://img.shields.io/badge/version-2.0.0-blue)
+![License](https://img.shields.io/badge/license-MIT-green)
+
+## ✨ Features
+
+- 🤖 **Multi-Provider Support**: OpenAI, Google Gemini, Mistral AI, xAI (Grok), and DeepSeek
+- 🏆 **Real-Time Scoring**: Intelligent judge scores each message on multiple criteria
+- ⚡ **Live Updates**: Watch debates unfold in real-time with dynamic phase transitions
+- 📊 **Advanced Analytics**: Detailed breakdowns, charts, and replay functionality
+- 🔒 **Secure Local Storage**: API keys encrypted with AES-256 in your browser
+- 💾 **No Database Required**: Works instantly with in-memory storage
+- 📦 **Export & Share**: JSON, Markdown, and shareable summaries
+- 🧭 **Custom Topics**: Presets plus your own topics
+- 🎭 **Demo Mode**: Test the platform without API keys
+- 🧑‍⚖️ **Solo Panel Mode**: Individual participant leaderboards
+
+## 🚀 Quick Start
+
+### Prerequisites
+
+- Node.js 18+ 
+- pnpm 8+
+
+### Installation
+
+```bash
+# Clone the repository
+git clone <your-repo-url>
+cd DebateAI
+
+# Install dependencies
+pnpm install
+
+# Start the development server
+pnpm dev
+```
+
+Open [http://localhost:3000](http://localhost:3000) in your browser.
+
+## ⚙️ Configuration
+
+### 1. Configure API Keys
+
+1. Navigate to `/settings` in the app
+2. Enter your API keys for any providers you want to use:
+   - **OpenAI**: Get key from [platform.openai.com](https://platform.openai.com)
+   - **Google Gemini**: Get key from [makersuite.google.com](https://makersuite.google.com)
+   - **Mistral AI**: Get key from [console.mistral.ai](https://console.mistral.ai)
+   - **xAI**: Get key from [x.ai](https://x.ai)
+   - **DeepSeek**: Get key from [platform.deepseek.com](https://platform.deepseek.com)
+3. Optionally enable encryption with a passphrase
+4. Test each provider connection
+5. Click "Save Settings"
+
+**Security Note**: Keys are stored locally in your browser using IndexedDB. They are never sent to our servers or committed to git.
+
+### 2. Run a Debate
+
+1. Click "Start a Debate" or navigate to `/app/debates/new`
+2. Select a topic from 10 pre-configured options or add a custom topic
+3. Choose debate format (Classic, Fast, or Freeform)
+4. Pick a mode: **Team Debate** or **Solo Panel**
+5. Add participants and configure provider, model, and role style
+6. Select judge provider and model
+7. Click "Start Debate"
+
+### 3. Demo Mode
+
+Don't have API keys? No problem!
+
+- The app automatically enables **Demo Mode** when no keys are configured
+- You can also click **Launch Demo Mode** on the landing page or setup
+- Uses mock responses and heuristic judge scoring
+- Perfect for testing the UI and understanding debate flow
+
+## 🧩 Supported Providers & Model Notes
+
+- **OpenAI**: Use `gpt-4o` or `gpt-4o-mini` for best latency/quality balance
+- **Gemini**: `gemini-2.0-flash-lite` is fast; `gemini-1.5-pro` for depth
+- **Mistral**: `mistral-large-latest` for quality, `mistral-small-latest` for speed
+- **xAI**: `grok-3-beta` or `grok-2-latest` depending on availability
+- **DeepSeek**: `deepseek-chat` for debate, `deepseek-coder` for technical topics
+
+## 🏗️ Architecture
+
+### Storage Options
+
+#### In-Memory (Default)
+- Works immediately, no setup required
+- Data resets on page refresh
+- Perfect for testing and demos
+
+#### File Store (Optional)
+- Persists debates to local JSON files
+- Only available when running locally
+- Enable by setting `NEXT_PUBLIC_USE_FILE_STORE=true`
+
+### Data Persistence
+
+```bash
+# Enable file storage (optional)
+echo "NEXT_PUBLIC_USE_FILE_STORE=true" > .env.local
+```
+
+This creates a `/data` directory with JSON files for:
+- Debate sessions
+- Messages
+- Best message events
+
+**Note**: API keys are NEVER written to file storage, only to encrypted browser storage.
+
+## 📤 Export & Share
+
+### Export a Debate
+1. Go to debate results page
+2. Click "Export JSON"
+3. Or export Markdown for a readable transcript
+
+### Share a Summary
+1. Click "Copy Summary" in the live room or results
+2. Paste into email, Slack, or a doc
+
+## 🎯 Debate Flow
+
+### Phases (Classic Format - 10 minutes)
+
+1. **Opening Arguments** (2 min): Initial positions
+2. **Rebuttals** (4 min): Counter-arguments and responses
+3. **Cross-Examination** (2 min): Direct questioning
+4. **Closing Statements** (2 min): Final arguments
+
+### Scoring System
+
+Each message is scored 0-10:
+- **Argument Quality** (0-4): Strength and validity of reasoning
+- **Relevance** (0-2): Topic and phase alignment
+- **Evidence** (0-2): Quality of examples and citations
+- **Clarity** (0-2): Structure and conciseness
+
+**Points**: Each participant earns 10 base points + their score for each message.
+
+**Winner**:
+- Team mode: Team with highest total points
+- Solo mode: Top participant by points
+
+## 🛠️ Tech Stack
+
+- **Framework**: Next.js 14+ (App Router)
+- **Language**: TypeScript (strict mode)
+- **Styling**: TailwindCSS + shadcn/ui
+- **Animations**: Framer Motion
+- **Icons**: Lucide React
+- **Charts**: Recharts
+- **Storage**: IndexedDB (idb-keyval)
+- **Encryption**: Web Crypto API (AES-256-GCM)
+
+## 📁 Project Structure
+
+```
+DebateAI/
+├── app/                    # Next.js app router pages
+│   ├── page.tsx           # Landing page
+│   ├── settings/          # API key configuration
+│   ├── app/               # Main application
+│   │   ├── page.tsx       # Dashboard
+│   │   └── debates/       # Debate flows
+│   └── api/               # API routes
+├── components/            # React components
+│   └── ui/               # shadcn/ui components
+├── lib/                   # Core logic
+│   ├── providers/        # AI provider adapters
+│   ├── storage/          # Storage adapters
+│   ├── constants.ts      # App constants
+│   └── utils.ts          # Utility functions
+├── types/                 # TypeScript definitions
+└── public/               # Static assets
+```
+
+## 🔐 Security & Privacy
+
+- ✅ All API keys stored locally in browser (IndexedDB)
+- ✅ Optional AES-256-GCM encryption with user passphrase
+- ✅ Keys never logged, never committed, never sent to external servers
+- ✅ Public repo friendly - no .env files required
+- ✅ All provider calls happen server-side via Next.js API routes
+- ⚠️ Keys are stored locally; avoid shared machines and public deployments without auth/secure storage
+
+## 🧰 Troubleshooting
+
+### App won’t start
+```bash
+rm -rf node_modules
+pnpm install
+pnpm dev
+```
+
+### API key not working
+- Verify the key has the right permissions
+- Ensure the provider and model match the key’s account
+- Use **Settings → Test Connection** to validate
+
+### Debates not persisting
+- In-memory storage resets on refresh
+- Enable file storage with `NEXT_PUBLIC_USE_FILE_STORE=true`
+- Or export JSON/Markdown for backups
+
+## 🚢 Deployment
+
+### Vercel (Recommended)
+
+```bash
+# Install Vercel CLI
+pnpm i -g vercel
+
+# Deploy
+vercel
+```
+
+### Other Platforms
+
+Works on any platform that supports Next.js:
+- Netlify
+- Railway
+- Render
+- Self-hosted
+
+**Important**: Since this uses in-memory storage by default, each deployment will start fresh. Use file storage or connect a database if you need persistence across deployments.
+
+## 📝 Scripts
+
+```bash
+pnpm dev          # Start development server
+pnpm build        # Build for production
+pnpm start        # Start production server
+pnpm lint         # Run ESLint
+pnpm type-check   # Run TypeScript compiler check
+```
+
+## 🤝 Contributing
+
+This is a public repository. Contributions are welcome!
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Submit a pull request
+
+## 📜 License
+
+MIT License - see LICENSE file for details
+
+## 🙏 Attribution
+
+### Images & Assets
+
+See [ATTRIBUTION.md](./ATTRIBUTION.md) for photo and asset sources.
+
+### Libraries
+
+Built with amazing open-source projects:
+- [Next.js](https://nextjs.org)
+- [shadcn/ui](https://ui.shadcn.com)
+- [Framer Motion](https://www.framer.com/motion/)
+- [Recharts](https://recharts.org)
+
+## 📞 Support
+
+- **Issues**: Open an issue on GitHub
+- **Discussions**: Use GitHub Discussions
+
+---
+
+**Built with ❤️ by the DebateClubAI team**
