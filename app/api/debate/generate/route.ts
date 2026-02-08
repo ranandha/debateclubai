@@ -50,12 +50,21 @@ export async function POST(request: NextRequest) {
     }
 
     // Build system prompt based on role and rules
+    // Map short phase names to display labels
+    const phaseLabels: Record<string, string> = {
+      opening: 'Opening Arguments',
+      rebuttals: 'Rebuttals',
+      'cross-exam': 'Cross-Examination',
+      closing: 'Closing Statements',
+    }
+    const phaseLabel = phaseLabels[phase] || phase
+    
     const phaseGuidance = {
       'Opening Arguments': 'Present your INITIAL position with fresh reasoning. Establish your unique perspective.',
       'Rebuttals': 'DIRECTLY address opponent arguments. Counter with new evidence or logical flaws you identify.',
       'Cross-Examination': 'Ask probing questions OR answer with precision. Expose weaknesses or clarify your stance.',
       'Closing Statements': 'SYNTHESIZE the debate. Highlight what you won, acknowledge complexity, leave lasting impact.',
-    }[phase] || 'Advance the discussion with NEW information, angles, or reasoning.'
+    }[phaseLabel] || 'Advance the discussion with NEW information, angles, or reasoning.'
 
     const diversityInstructions = `
 CRITICAL DIVERSITY REQUIREMENTS:
@@ -68,7 +77,7 @@ CRITICAL DIVERSITY REQUIREMENTS:
     const systemPrompt = `You are ${participantName}, a ${roleStyle} debater in a live structured debate.
 
 Debate Topic: ${topic}
-Current Phase: ${phase}
+Current Phase: ${phaseLabel}
 Your Role Style: ${roleStyle}
 Messages so far: ${recentMessages.length}
 

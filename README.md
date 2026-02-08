@@ -87,31 +87,9 @@ Don't have API keys? No problem!
 
 ## 🏗️ Architecture
 
-### Storage Options
+### Storage
 
-#### In-Memory (Default)
-- Works immediately, no setup required
-- Data resets on page refresh
-- Perfect for testing and demos
-
-#### File Store (Optional)
-- Persists debates to local JSON files
-- Only available when running locally
-- Enable by setting `NEXT_PUBLIC_USE_FILE_STORE=true`
-
-### Data Persistence
-
-```bash
-# Enable file storage (optional)
-echo "NEXT_PUBLIC_USE_FILE_STORE=true" > .env.local
-```
-
-This creates a `/data` directory with JSON files for:
-- Debate sessions
-- Messages
-- Best message events
-
-**Note**: API keys are NEVER written to file storage, only to encrypted browser storage.
+- **In-Memory**: Works immediately, no setup required. Data resets on page refresh. Perfect for testing and demos.
 
 ## 📤 Export & Share
 
@@ -206,8 +184,7 @@ pnpm dev
 
 ### Debates not persisting
 - In-memory storage resets on refresh
-- Enable file storage with `NEXT_PUBLIC_USE_FILE_STORE=true`
-- Or export JSON/Markdown for backups
+- Export JSON/Markdown for backups
 
 ## 🚢 Deployment
 
@@ -229,7 +206,7 @@ Works on any platform that supports Next.js:
 - Render
 - Self-hosted
 
-**Important**: Since this uses in-memory storage by default, each deployment will start fresh. Use file storage or connect a database if you need persistence across deployments.
+**Important**: Uses in-memory storage, so each deployment starts fresh. Export debates as JSON/Markdown for backups.
 
 ## 📝 Scripts
 

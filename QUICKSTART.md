@@ -119,9 +119,8 @@ pnpm dev
 - Check browser console for errors
 
 ### Debates not persisting
-- Default: In-memory storage (resets on refresh)
-- Enable file storage: `NEXT_PUBLIC_USE_FILE_STORE=true` in `.env.local`
-- Or use Export (JSON/Markdown) to save debates
+- In-memory storage resets on page refresh
+- Use Export (JSON/Markdown) to save debates for later
 
 ### Styling issues
 ```bash

@@ -13,14 +13,18 @@ import {
   saveSettings,
   getDefaultSettings,
   deleteSettings,
+  isEncrypted,
 } from '@/lib/storage/secure-storage'
 import { DEFAULT_MODELS } from '@/lib/constants'
 
 export default function SettingsPage() {
   const [settings, setSettings] = useState<AppSettings>(getDefaultSettings())
   const [passphrase, setPassphrase] = useState('')
+  const [unlockPassphrase, setUnlockPassphrase] = useState('')
   const [showPassphrase, setShowPassphrase] = useState(false)
   const [loading, setLoading] = useState(true)
+  const [locked, setLocked] = useState(false)
+  const [unlockError, setUnlockError] = useState('')
   const [saving, setSaving] = useState(false)
   const [testResults, setTestResults] = useState<Record<string, 'success' | 'error' | 'testing'>>(
     {}
@@ -32,12 +36,45 @@ export default function SettingsPage() {
 
   async function loadExistingSettings() {
     try {
+      const encrypted = await isEncrypted()
+      if (encrypted) {
+        setLocked(true)
+        setLoading(false)
+        return
+      }
+      
       const loaded = await loadSettings()
       if (loaded) {
         setSettings(loaded)
       }
     } catch (error) {
       console.error('Failed to load settings:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  async function handleUnlock() {
+    if (!unlockPassphrase) {
+      setUnlockError('Please enter your passphrase')
+      return
+    }
+    
+    setLoading(true)
+    setUnlockError('')
+    
+    try {
+      const loaded = await loadSettings(unlockPassphrase)
+      if (loaded) {
+        setSettings(loaded)
+        setPassphrase(unlockPassphrase)
+        setLocked(false)
+      } else {
+        setUnlockError('No settings found')
+      }
+    } catch (error) {
+      const errorMsg = error instanceof Error ? error.message : 'Failed to decrypt'
+      setUnlockError(errorMsg.includes('decrypt') ? 'Incorrect passphrase' : errorMsg)
     } finally {
       setLoading(false)
     }
@@ -64,8 +101,10 @@ export default function SettingsPage() {
     await deleteSettings()
     setSettings(getDefaultSettings())
     setPassphrase('')
+    setUnlockPassphrase('')
     setShowPassphrase(false)
     setTestResults({})
+    setLocked(false)
   }
 
   async function testProvider(provider: keyof typeof settings.providers) {
@@ -107,6 +146,63 @@ export default function SettingsPage() {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+      </div>
+    )
+  }
+
+  if (locked) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-purple-50">
+        <nav className="border-b bg-white/80 backdrop-blur-sm">
+          <div className="container mx-auto flex h-16 items-center justify-between px-4">
+            <Link href="/" className="flex items-center gap-2">
+              <Shield className="h-8 w-8 text-blue-600" />
+              <span className="text-xl font-bold">Unlock Settings</span>
+            </Link>
+            <Link href="/">
+              <Button variant="ghost">Back to Home</Button>
+            </Link>
+          </div>
+        </nav>
+        
+        <div className="container mx-auto flex min-h-[calc(100vh-4rem)] items-center justify-center px-4">
+          <Card className="w-full max-w-md">
+            <CardHeader>
+              <div className="flex items-center gap-2">
+                <Key className="h-5 w-5 text-blue-600" />
+                <CardTitle>Settings Are Encrypted</CardTitle>
+              </div>
+              <CardDescription>
+                Enter your passphrase to unlock your API keys and settings
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <label className="mb-2 block text-sm font-medium">Passphrase</label>
+                <Input
+                  type="password"
+                  value={unlockPassphrase}
+                  onChange={(e) => setUnlockPassphrase(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleUnlock()}
+                  placeholder="Enter your passphrase"
+                  className="w-full"
+                />
+                {unlockError && (
+                  <p className="mt-2 text-sm text-red-600">{unlockError}</p>
+                )}
+              </div>
+              <div className="flex gap-2">
+                <Button onClick={handleUnlock} className="flex-1" disabled={!unlockPassphrase}>
+                  <Key className="mr-2 h-4 w-4" />
+                  Unlock
+                </Button>
+                <Button onClick={handleClearKeys} variant="outline">
+                  Reset All
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     )
   }

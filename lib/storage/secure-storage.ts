@@ -104,8 +104,18 @@ export async function loadSettings(passphrase?: string): Promise<AppSettings | n
 
   try {
     if (stored.encrypted) {
-      const key = passphrase || (await getOrCreateDeviceKey())
-      const decrypted = await decryptData(stored.data, key)
+      if (!passphrase) {
+        // If encrypted but no passphrase provided, check if device key works
+        try {
+          const deviceKey = await getOrCreateDeviceKey()
+          const decrypted = await decryptData(stored.data, deviceKey)
+          return JSON.parse(decrypted)
+        } catch {
+          // Device key didn't work, need user passphrase
+          throw new Error('PASSPHRASE_REQUIRED')
+        }
+      }
+      const decrypted = await decryptData(stored.data, passphrase)
       return JSON.parse(decrypted)
     } else {
       return JSON.parse(stored.data)
@@ -114,6 +124,11 @@ export async function loadSettings(passphrase?: string): Promise<AppSettings | n
     console.error('Failed to load settings:', error)
     throw error
   }
+}
+
+export async function isEncrypted(): Promise<boolean> {
+  const stored = await get<{ encrypted: boolean; data: string }>(STORAGE_KEY)
+  return stored?.encrypted || false
 }
 
 export async function deleteSettings(): Promise<void> {

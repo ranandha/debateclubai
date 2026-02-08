@@ -65,70 +65,12 @@ class MemoryStore implements StorageAdapter {
   }
 }
 
-// File-based storage (optional, for local dev only)
-class FileStore implements StorageAdapter {
-  private baseUrl = '/api/storage'
-
-  async saveSession(session: DebateSession): Promise<void> {
-    await fetch(`${this.baseUrl}/sessions`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(session),
-    })
-  }
-
-  async getSession(id: string): Promise<DebateSession | null> {
-    const res = await fetch(`${this.baseUrl}/sessions/${id}`)
-    if (!res.ok) return null
-    return res.json()
-  }
-
-  async getAllSessions(): Promise<DebateSession[]> {
-    const res = await fetch(`${this.baseUrl}/sessions`)
-    if (!res.ok) return []
-    return res.json()
-  }
-
-  async deleteSession(id: string): Promise<void> {
-    await fetch(`${this.baseUrl}/sessions/${id}`, { method: 'DELETE' })
-  }
-
-  async saveMessage(message: DebateMessage): Promise<void> {
-    await fetch(`${this.baseUrl}/messages`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(message),
-    })
-  }
-
-  async getMessages(debateId: string): Promise<DebateMessage[]> {
-    const res = await fetch(`${this.baseUrl}/messages/${debateId}`)
-    if (!res.ok) return []
-    return res.json()
-  }
-
-  async saveBestMessageEvent(event: BestMessageEvent): Promise<void> {
-    await fetch(`${this.baseUrl}/best-messages`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(event),
-    })
-  }
-
-  async getBestMessageEvents(debateId: string): Promise<BestMessageEvent[]> {
-    const res = await fetch(`${this.baseUrl}/best-messages/${debateId}`)
-    if (!res.ok) return []
-    return res.json()
-  }
-}
-
 // Singleton storage instance
 let storageInstance: StorageAdapter | null = null
 
 export function getStorage(): StorageAdapter {
   if (!storageInstance) {
-    const useFileStore = process.env.NEXT_PUBLIC_USE_FILE_STORE === 'true'
-    storageInstance = useFileStore ? new FileStore() : new MemoryStore()
+    storageInstance = new MemoryStore()
   }
   return storageInstance
 }

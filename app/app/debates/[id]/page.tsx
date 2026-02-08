@@ -27,6 +27,7 @@ import {
   getProviderColor,
   buildShareableSummary,
 } from '@/lib/utils'
+import { PHASE_DURATIONS } from '@/lib/constants'
 import { loadSettings } from '@/lib/storage/secure-storage'
 
 export default function LiveDebatePage() {
@@ -37,6 +38,7 @@ export default function LiveDebatePage() {
   const [timeRemaining, setTimeRemaining] = useState(0)
   const [autoUpdate, setAutoUpdate] = useState(true)
   const isEndingRef = useRef(false)
+  const isTickingRef = useRef(false)
 
   useEffect(() => {
     loadSession()
@@ -148,17 +150,47 @@ export default function LiveDebatePage() {
   }
 
   async function tickDebate() {
-    if (!session) return
+    if (!session || isTickingRef.current) return
+    isTickingRef.current = true
 
-    const now = Date.now()
-    const cooldownMs = 10000
-    const eligibleParticipants = session.participants.filter((p) => {
-      const progress = session.progress.find((pr) => pr.participantId === p.id)
-      const lastSpoke = progress?.lastSpeakTime || 0
-      return now - lastSpoke > cooldownMs
-    })
+    try {
+      // Check for phase transition
+      const now = Date.now()
+      const phaseStartTime = session.phaseStartTime || session.startTime
+      const elapsed = now - phaseStartTime
+      const phaseDurations = PHASE_DURATIONS[session.settings.format]
+      const phases = Object.keys(phaseDurations)
+      const currentPhaseIndex = phases.indexOf(session.currentPhase)
+      
+      if (currentPhaseIndex >= 0 && currentPhaseIndex < phases.length) {
+        const currentPhaseDuration = phaseDurations[session.currentPhase]
+        
+        if (elapsed >= currentPhaseDuration) {
+          const nextPhaseIndex = currentPhaseIndex + 1
+          if (nextPhaseIndex < phases.length) {
+            // Transition to next phase
+            session.currentPhase = phases[nextPhaseIndex]
+            session.phaseStartTime = now
+            const storage = getStorage()
+            await storage.saveSession(session)
+            setSession({ ...session })
+            isTickingRef.current = false
+            return
+          }
+        }
+      }
 
-    if (eligibleParticipants.length === 0) return
+      const cooldownMs = 10000
+      const eligibleParticipants = session.participants.filter((p) => {
+        const progress = session.progress.find((pr) => pr.participantId === p.id)
+        const lastSpoke = progress?.lastSpeakTime || 0
+        return now - lastSpoke > cooldownMs
+      })
+
+      if (eligibleParticipants.length === 0) {
+        isTickingRef.current = false
+        return
+      }
 
     let participant: Participant
 
@@ -193,8 +225,11 @@ export default function LiveDebatePage() {
         eligibleParticipants[Math.floor(Math.random() * eligibleParticipants.length)]
     }
 
-    await generateMessage(participant)
-    await loadSession() // Reload to get updated state
+      await generateMessage(participant)
+      await loadSession() // Reload to get updated state
+    } finally {
+      isTickingRef.current = false
+    }
   }
 
   async function generateMessage(participant: Participant) {
@@ -257,7 +292,7 @@ export default function LiveDebatePage() {
   async function saveGeneratedMessage(
     content: string,
     participant: Participant,
-    apiKey?: string
+    _apiKey?: string
   ) {
     const message: DebateMessage = {
       id: `msg-${Date.now()}`,
@@ -268,14 +303,17 @@ export default function LiveDebatePage() {
       phase: session!.currentPhase,
     }
 
-    await scoreAndSaveMessage(message, participant, apiKey)
+    await scoreAndSaveMessage(message, participant)
   }
 
   async function scoreAndSaveMessage(
     message: DebateMessage,
-    participant: Participant,
-    judgeApiKey?: string
+    participant: Participant
   ) {
+    const settings = await loadSettings()
+    const judgeProvider = session!.settings.judgeProvider
+    const judgeKey = settings?.providers[judgeProvider]?.apiKey
+
     const response = await fetch('/api/debate/judge', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -289,8 +327,8 @@ export default function LiveDebatePage() {
         rules: session!.settings.rules,
         judgeProvider: session!.settings.judgeProvider,
         judgeModel: session!.settings.judgeModel,
-        apiKey: judgeApiKey,
-        demoMode: !judgeApiKey,
+        apiKey: judgeKey,
+        demoMode: settings?.demoMode || !judgeKey,
       }),
     })
 
