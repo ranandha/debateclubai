@@ -37,15 +37,16 @@ export default function SettingsPage() {
   async function loadExistingSettings() {
     try {
       const encrypted = await isEncrypted()
-      if (encrypted) {
-        setLocked(true)
-        setLoading(false)
-        return
-      }
       
+      // Try to load without passphrase first
       const loaded = await loadSettings()
+      
       if (loaded) {
         setSettings(loaded)
+        setLocked(false)
+      } else if (encrypted) {
+        // Settings exist but are encrypted and couldn't be decrypted
+        setLocked(true)
       }
     } catch (error) {
       console.error('Failed to load settings:', error)

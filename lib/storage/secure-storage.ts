@@ -105,14 +105,15 @@ export async function loadSettings(passphrase?: string): Promise<AppSettings | n
   try {
     if (stored.encrypted) {
       if (!passphrase) {
-        // If encrypted but no passphrase provided, check if device key works
+        // If encrypted but no passphrase provided, try device key first
         try {
           const deviceKey = await getOrCreateDeviceKey()
           const decrypted = await decryptData(stored.data, deviceKey)
           return JSON.parse(decrypted)
         } catch {
-          // Device key didn't work, need user passphrase
-          throw new Error('PASSPHRASE_REQUIRED')
+          // Device key didn't work, return null instead of throwing
+          // This allows the app to continue with default/demo mode
+          return null
         }
       }
       const decrypted = await decryptData(stored.data, passphrase)
@@ -122,7 +123,7 @@ export async function loadSettings(passphrase?: string): Promise<AppSettings | n
     }
   } catch (error) {
     console.error('Failed to load settings:', error)
-    throw error
+    return null
   }
 }
 
