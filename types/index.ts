@@ -130,8 +130,6 @@ export interface AppSettings {
   }
   debateDefaults: DebateSettings
   demoMode: boolean
-  useEncryption: boolean
-  encryptionPassphrase?: string
 }
 
 export interface ProviderTestResult {
