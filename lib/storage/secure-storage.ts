@@ -132,6 +132,11 @@ export async function isEncrypted(): Promise<boolean> {
   return stored?.encrypted || false
 }
 
+export async function hasStoredSettings(): Promise<boolean> {
+  const stored = await get<{ encrypted: boolean; data: string }>(STORAGE_KEY)
+  return stored !== undefined && stored !== null
+}
+
 export async function deleteSettings(): Promise<void> {
   await del(STORAGE_KEY)
   await del(SALT_KEY)

@@ -11,7 +11,7 @@ import { DebateSession, Participant, Team, AIProvider, RoleStyle, DebateMode } f
 import { DEBATE_TOPICS, DEFAULT_MODELS, ROLE_STYLES, DEBATE_FORMATS, PARTICIPANT_COLORS } from '@/lib/constants'
 import { generateId } from '@/lib/utils'
 import { getStorage } from '@/lib/storage/debate-storage'
-import { loadSettings, saveSettings, getDefaultSettings } from '@/lib/storage/secure-storage'
+import { loadSettings, saveSettings, getDefaultSettings, isEncrypted } from '@/lib/storage/secure-storage'
 
 const CUSTOM_TOPIC_ID = 'custom'
 const STORAGE_KEYS = {
@@ -36,6 +36,7 @@ export default function NewDebatePage() {
   const [maxLength, setMaxLength] = useState(150)
   const [availableProviders, setAvailableProviders] = useState<AIProvider[]>([])
   const [demoMode, setDemoMode] = useState(false)
+  const [settingsLocked, setSettingsLocked] = useState(false)
 
   useEffect(() => {
     loadAvailableProviders()
@@ -64,6 +65,16 @@ export default function NewDebatePage() {
 
   async function loadAvailableProviders() {
     const settings = await loadSettings()
+    const encrypted = await isEncrypted()
+    
+    if (!settings && encrypted) {
+      // Settings exist but are encrypted and locked
+      setSettingsLocked(true)
+      setDemoMode(true)
+      setAvailableProviders(['openai'])
+      return
+    }
+    
     if (!settings) {
       setDemoMode(true)
       setAvailableProviders(['openai'])
@@ -278,9 +289,18 @@ export default function NewDebatePage() {
           <Card className="mb-6 border-amber-200 bg-amber-50">
             <CardContent className="pt-6">
               <p className="text-sm text-amber-900">
-                🎭 <strong>Demo Mode</strong> - No API keys configured. The debate will use mock
-                responses. <Link href="/settings" className="underline">Configure API keys</Link> for
-                real AI debates.
+                {settingsLocked ? (
+                  <>
+                    🔒 <strong>Settings Locked</strong> - Your API keys are encrypted. {' '}
+                    <Link href="/settings" className="underline">Unlock settings</Link> to access your configured providers, or use Demo Mode with mock responses.
+                  </>
+                ) : (
+                  <>
+                    🎭 <strong>Demo Mode</strong> - No API keys configured. The debate will use mock
+                    responses. <Link href="/settings" className="underline">Configure API keys</Link> for
+                    real AI debates.
+                  </>
+                )}
               </p>
             </CardContent>
           </Card>
