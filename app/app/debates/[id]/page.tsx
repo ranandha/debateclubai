@@ -345,7 +345,7 @@ export default function LiveDebatePage() {
       const progress = session!.progress.find((p) => p.participantId === participant.id)!
       progress.messagesCount++
       progress.lastSpeakTime = Date.now()
-      progress.points += 10 + Math.floor(result.score.total)
+      progress.points += Math.floor(result.score.total)
       progress.avgScore =
         (progress.avgScore * (progress.messagesCount - 1) + result.score.total) /
         progress.messagesCount

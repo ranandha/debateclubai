@@ -118,7 +118,7 @@ Each message is scored 0-10 by an AI judge (or heuristic in demo mode):
 - **Evidence** (0-2): Quality of examples and citations
 - **Clarity** (0-2): Structure and conciseness
 
-**Points**: Each participant earns 10 base points + their message score for each contribution.
+**Points**: Each participant earns points equal to their message score (0-10) for each contribution.
 
 **Winner Determination**:
 - **Team Mode**: Team A vs Team B—team with highest total points wins
