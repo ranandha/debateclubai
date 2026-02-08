@@ -1,8 +1,8 @@
-# DebateClubAI v2 - No Database Edition
+# DebateClubAI
 
 A premium, modern AI debate platform where multiple AI providers compete head-to-head in structured debates with real-time scoring and analytics.
 
-![DebateClubAI v2](https://img.shields.io/badge/version-2.0.0-blue)
+![DebateClubAI](https://img.shields.io/badge/version-2.0.0-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
 ## ✨ Features
@@ -29,8 +29,8 @@ A premium, modern AI debate platform where multiple AI providers compete head-to
 
 ```bash
 # Clone the repository
-git clone <your-repo-url>
-cd DebateAI
+git clone https://github.com/ranandha/debateclubai.git
+cd debateclubai  # or whatever you named the folder (e.g., DebateAI)
 
 # Install dependencies
 pnpm install
@@ -45,7 +45,7 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 ### 1. Configure API Keys
 
-1. Navigate to `/settings` in the app
+1. Click **Settings** in the navigation
 2. Enter your API keys for any providers you want to use:
    - **OpenAI**: Get key from [platform.openai.com](https://platform.openai.com)
    - **Google Gemini**: Get key from [makersuite.google.com](https://makersuite.google.com)
@@ -56,17 +56,17 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 4. Test each provider connection
 5. Click "Save Settings"
 
-**Security Note**: Keys are stored locally in your browser using IndexedDB. They are never sent to our servers or committed to git.
+**Security Note**: API keys are stored locally in your browser's IndexedDB (optionally encrypted with AES-256-GCM). When you start a debate, your local Next.js server uses these keys to make API calls to the providers. Keys are never sent to external databases, never logged, and never committed to git.
 
 ### 2. Run a Debate
 
-1. Click "Start a Debate" or navigate to `/app/debates/new`
+1. Click **Start a Debate** from the landing page or dashboard
 2. Select a topic from 10 pre-configured options or add a custom topic
 3. Choose debate format (Classic, Fast, or Freeform)
 4. Pick a mode: **Team Debate** or **Solo Panel**
 5. Add participants and configure provider, model, and role style
 6. Select judge provider and model
-7. Click "Start Debate"
+7. Click **Start Debate**
 
 ### 3. Demo Mode
 
@@ -116,13 +116,12 @@ This creates a `/data` directory with JSON files for:
 ## 📤 Export & Share
 
 ### Export a Debate
-1. Go to debate results page
-2. Click "Export JSON"
-3. Or export Markdown for a readable transcript
+1. During or after a debate, click **Export JSON** to download session data
+2. Click **Export Markdown** for a readable transcript with scores
 
 ### Share a Summary
-1. Click "Copy Summary" in the live room or results
-2. Paste into email, Slack, or a doc
+1. Click **Copy Summary** in the live debate room or results page
+2. Paste the shareable text into email, Slack, or documents
 
 ## 🎯 Debate Flow
 
@@ -135,17 +134,18 @@ This creates a `/data` directory with JSON files for:
 
 ### Scoring System
 
-Each message is scored 0-10:
+Each message is scored 0-10 by an AI judge (or heuristic in demo mode):
 - **Argument Quality** (0-4): Strength and validity of reasoning
 - **Relevance** (0-2): Topic and phase alignment
 - **Evidence** (0-2): Quality of examples and citations
 - **Clarity** (0-2): Structure and conciseness
 
-**Points**: Each participant earns 10 base points + their score for each message.
+**Points**: Each participant earns 10 base points + their message score for each contribution.
 
-**Winner**:
-- Team mode: Team with highest total points
-- Solo mode: Top participant by points
+**Winner Determination**:
+- **Team Mode**: Team A vs Team B—team with highest total points wins
+- **Solo Panel Mode**: Individual leaderboard—participant with most points wins
+- **Demo Mode**: Uses heuristic scoring (keyword matching, structure analysis) when no API keys configured
 
 ## 🛠️ Tech Stack
 
@@ -161,7 +161,7 @@ Each message is scored 0-10:
 ## 📁 Project Structure
 
 ```
-DebateAI/
+debateclubai/
 ├── app/                    # Next.js app router pages
 │   ├── page.tsx           # Landing page
 │   ├── settings/          # API key configuration
@@ -182,12 +182,13 @@ DebateAI/
 
 ## 🔐 Security & Privacy
 
-- ✅ All API keys stored locally in browser (IndexedDB)
-- ✅ Optional AES-256-GCM encryption with user passphrase
-- ✅ Keys never logged, never committed, never sent to external servers
-- ✅ Public repo friendly - no .env files required
-- ✅ All provider calls happen server-side via Next.js API routes
-- ⚠️ Keys are stored locally; avoid shared machines and public deployments without auth/secure storage
+- ✅ **API keys stored locally**: Saved in your browser's IndexedDB, not on any remote server
+- ✅ **Optional encryption**: AES-256-GCM with user-provided passphrase
+- ✅ **Server-side calls only**: Your local Next.js server uses keys to call AI providers—keys never leave your machine
+- ✅ **No external database**: Zero risk of credential leaks from database breaches
+- ✅ **Never committed**: `.gitignore` prevents accidental key commits
+- ⚠️ **Shared machines**: Avoid using on public/shared computers without clearing browser data
+- ⚠️ **Public deployments**: Add authentication before deploying to public URLs
 
 ## 🧰 Troubleshooting
 
