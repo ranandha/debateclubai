@@ -10,7 +10,7 @@ import Link from 'next/link'
 import { DebateSession } from '@/types'
 import { getStorage, exportDebateToJSON, exportDebateToMarkdown } from '@/lib/storage/debate-storage'
 import { getTeamColor, formatDuration, buildShareableSummary } from '@/lib/utils'
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
 
 export default function ResultsPage() {
   const params = useParams()
@@ -77,6 +77,29 @@ export default function ResultsPage() {
       messages: p.messagesCount,
     }))
     .sort((a, b) => b.points - a.points)
+
+  // Compute per-participant sub-score averages from individual messages
+  const subScoreData = session.participants.map((participant) => {
+    const scoredMessages = session.messages.filter(
+      (m) => m.participantId === participant.id && m.score
+    )
+    const avg = (key: keyof NonNullable<typeof scoredMessages[0]['score']>) =>
+      scoredMessages.length
+        ? +(scoredMessages.reduce((sum, m) => sum + ((m.score as any)[key] || 0), 0) / scoredMessages.length).toFixed(2)
+        : 0
+    const progress = session.progress.find((pr) => pr.participantId === participant.id)
+    return {
+      name: participant.name,
+      team: participant.team,
+      totalPoints: progress?.points || 0,
+      messagesCount: progress?.messagesCount || 0,
+      avgScore: progress?.avgScore || 0,
+      argumentQuality: avg('argumentQuality'),
+      relevance: avg('relevance'),
+      evidence: avg('evidence'),
+      clarity: avg('clarity'),
+    }
+  }).sort((a, b) => b.totalPoints - a.totalPoints)
 
   const topSolo = session.progress
     .map((progress) => ({
@@ -175,18 +198,95 @@ export default function ResultsPage() {
         {/* Performance Chart */}
         <Card className="mb-8">
           <CardHeader>
-            <CardTitle>Participant Performance</CardTitle>
+            <CardTitle>Score Breakdown by Criteria</CardTitle>
+            <p className="text-sm text-gray-500">
+              Average score per criterion across all judged messages.{' '}
+              <span className="font-medium text-gray-700">
+                Argument Quality (0–4) · Relevance (0–2) · Evidence (0–2) · Clarity (0–2)
+              </span>
+            </p>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={chartData}>
+            <ResponsiveContainer width="100%" height={320}>
+              <BarChart data={subScoreData} barCategoryGap="25%" barGap={4}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="name" />
-                <YAxis />
-                <Tooltip />
-                <Bar dataKey={session.mode === 'solo' ? 'avgScore' : 'points'} fill="#3B82F6" />
+                <YAxis domain={[0, 4]} />
+                <Tooltip
+                  formatter={(value: number, name: string) => [value.toFixed(2), name]}
+                />
+                <Legend />
+                <Bar dataKey="argumentQuality" name="Arg Quality (0–4)" fill="#6366F1" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="relevance" name="Relevance (0–2)" fill="#22C55E" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="evidence" name="Evidence (0–2)" fill="#F59E0B" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="clarity" name="Clarity (0–2)" fill="#EC4899" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
+          </CardContent>
+        </Card>
+
+        {/* Detailed Score Table */}
+        <Card className="mb-8">
+          <CardHeader>
+            <CardTitle>Participant Score Details</CardTitle>
+            <p className="text-sm text-gray-500">
+              Total Points = sum of per-message scores (0–10 each). Higher quality per message beats higher message count.
+            </p>
+          </CardHeader>
+          <CardContent>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b text-left text-gray-600">
+                    <th className="pb-3 pr-4 font-semibold">Participant</th>
+                    {session.mode === 'team' && <th className="pb-3 pr-4 font-semibold">Team</th>}
+                    <th className="pb-3 pr-4 font-semibold text-right">Messages</th>
+                    <th className="pb-3 pr-4 font-semibold text-right">Avg Score</th>
+                    <th className="pb-3 pr-4 font-semibold text-right">
+                      <span className="text-indigo-600">Arg Quality</span>
+                      <br /><span className="font-normal text-gray-400">/4</span>
+                    </th>
+                    <th className="pb-3 pr-4 font-semibold text-right">
+                      <span className="text-green-600">Relevance</span>
+                      <br /><span className="font-normal text-gray-400">/2</span>
+                    </th>
+                    <th className="pb-3 pr-4 font-semibold text-right">
+                      <span className="text-amber-600">Evidence</span>
+                      <br /><span className="font-normal text-gray-400">/2</span>
+                    </th>
+                    <th className="pb-3 pr-4 font-semibold text-right">
+                      <span className="text-pink-600">Clarity</span>
+                      <br /><span className="font-normal text-gray-400">/2</span>
+                    </th>
+                    <th className="pb-3 font-semibold text-right">Total Pts</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {subScoreData.map((row, idx) => (
+                    <tr key={row.name} className={`border-b last:border-0 ${idx === 0 ? 'bg-amber-50' : ''}`}>
+                      <td className="py-3 pr-4 font-medium">
+                        {idx === 0 && <span className="mr-1">🏆</span>}
+                        {row.name}
+                      </td>
+                      {session.mode === 'team' && (
+                        <td className="py-3 pr-4">
+                          {row.team && (
+                            <Badge className={getTeamColor(row.team)}>Team {row.team}</Badge>
+                          )}
+                        </td>
+                      )}
+                      <td className="py-3 pr-4 text-right text-gray-600">{row.messagesCount}</td>
+                      <td className="py-3 pr-4 text-right text-gray-600">{row.avgScore.toFixed(2)}</td>
+                      <td className="py-3 pr-4 text-right font-semibold text-indigo-700">{row.argumentQuality.toFixed(2)}</td>
+                      <td className="py-3 pr-4 text-right font-semibold text-green-700">{row.relevance.toFixed(2)}</td>
+                      <td className="py-3 pr-4 text-right font-semibold text-amber-700">{row.evidence.toFixed(2)}</td>
+                      <td className="py-3 pr-4 text-right font-semibold text-pink-700">{row.clarity.toFixed(2)}</td>
+                      <td className="py-3 text-right text-lg font-bold">{row.totalPoints}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </CardContent>
         </Card>
 
