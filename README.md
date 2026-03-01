@@ -11,7 +11,7 @@ A premium, modern AI debate platform where multiple AI providers compete head-to
 - 🏆 **Real-Time Scoring**: Intelligent judge scores each message on multiple criteria
 - ⚡ **Live Updates**: Watch debates unfold in real-time with dynamic phase transitions
 - 📊 **Advanced Analytics**: Detailed breakdowns, charts, and replay functionality
-- 🔒 **Secure Local Storage**: API keys encrypted with AES-256 in your browser
+- 🔒 **Secure Local Storage**: API keys stored locally in the browser (IndexedDB); optional passphrase encryption via Web Crypto (AES-GCM)
 - 💾 **No Database Required**: Works instantly with in-memory storage
 - 📦 **Export & Share**: JSON, Markdown, and shareable summaries
 - 🧭 **Custom Topics**: Presets plus your own topics
@@ -56,7 +56,7 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 4. Test each provider connection
 5. Click "Save Settings"
 
-**Security Note**: API keys are stored locally in your browser's IndexedDB (optionally encrypted with AES-256-GCM). When you start a debate, your local Next.js server uses these keys to make API calls to the providers. Keys are never sent to external databases, never logged, and never committed to git.
+**Security Note**: API keys are stored locally in your browser's IndexedDB. An optional passphrase encrypts them using Web Crypto (AES-GCM). When you start a debate, your local Next.js server routes use these keys to call the AI providers — keys never leave your machine, are never committed to git, and there is no external database. ⚠️ Do not deploy this app publicly without adding authentication and moving API keys to secure server-side environment variables.
 
 ### 2. Run a Debate
 
@@ -134,7 +134,7 @@ Each message is scored 0-10 by an AI judge (or heuristic in demo mode):
 - **Icons**: Lucide React
 - **Charts**: Recharts
 - **Storage**: IndexedDB (idb-keyval)
-- **Encryption**: Web Crypto API (AES-256-GCM)
+- **Encryption**: Web Crypto API (AES-GCM, optional)
 
 ## 📁 Project Structure
 
@@ -161,7 +161,7 @@ debateclubai/
 ## 🔐 Security & Privacy
 
 - ✅ **API keys stored locally**: Saved in your browser's IndexedDB, not on any remote server
-- ✅ **Optional encryption**: AES-256-GCM with user-provided passphrase
+- ✅ **Optional encryption**: Passphrase-based encryption via Web Crypto (AES-GCM)
 - ✅ **Server-side calls only**: Your local Next.js server uses keys to call AI providers—keys never leave your machine
 - ✅ **No external database**: Zero risk of credential leaks from database breaches
 - ✅ **Never committed**: `.gitignore` prevents accidental key commits
